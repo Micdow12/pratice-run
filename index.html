@@ -1,0 +1,1218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ChessTacs - Master Your Game</title>
+    <style>
+        :root {
+            --bg-dark: #121214;
+            --bg-card: #1e1e24;
+            --primary: #818cf8;
+            --primary-hover: #6366f1;
+            --accent: #f59e0b;
+            --text-light: #f3f4f6;
+            --text-muted: #9ca3af;
+            --board-light: #eeeed2;
+            --board-dark: #769656;
+            --gradient-main: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
+            --gradient-chess: linear-gradient(45deg, #1e293b 25%, transparent 25%), 
+                              linear-gradient(-45deg, #1e293b 25%, transparent 25%), 
+                              linear-gradient(45deg, transparent 75%, #1e293b 75%), 
+                              linear-gradient(-45deg, transparent 75%, #1e293b 75%);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            user-select: none;
+        }
+
+        body {
+            background: var(--gradient-main);
+            color: var(--text-light);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Animations */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes popUp {
+            from { transform: scale(0.9); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+
+        @keyframes boardSlide {
+            0% { transform: translateY(0); }
+            50% { transform: translateY(-5px); }
+            100% { transform: translateY(0); }
+        }
+
+        .animated-view {
+            animation: fadeIn 0.4s ease forwards;
+        }
+
+        /* Navbar Layout */
+        header {
+            background-color: rgba(18, 18, 20, 0.85);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            z-index: 100;
+            padding: 0 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            height: 70px;
+        }
+
+        .brand-logo {
+            font-size: 1.75rem;
+            font-weight: 800;
+            background: linear-gradient(to right, #a5b4fc, #6366f1);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+
+        .brand-logo:hover {
+            opacity: 0.9;
+        }
+
+        nav ul {
+            display: flex;
+            list-style: none;
+            gap: 1.5rem;
+        }
+
+        .nav-item {
+            position: relative;
+            cursor: pointer;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            font-weight: 500;
+            transition: background 0.2s, color 0.2s;
+        }
+
+        .nav-item:hover {
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--primary);
+        }
+
+        /* Dropdown menus */
+        .dropdown-menu {
+            display: none;
+            position: absolute;
+            top: 100%;
+            left: 0;
+            background: var(--bg-card);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            min-width: 200px;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
+            margin-top: 0.5rem;
+            overflow: hidden;
+            animation: fadeIn 0.2s ease;
+        }
+
+        .nav-item:hover .dropdown-menu {
+            display: block;
+        }
+
+        .dropdown-item {
+            padding: 0.75rem 1.2rem;
+            color: var(--text-muted);
+            transition: all 0.2s;
+        }
+
+        .dropdown-item:hover {
+            background: rgba(129, 140, 248, 0.15);
+            color: var(--text-light);
+            padding-left: 1.5rem;
+        }
+
+        .user-badge {
+            background: rgba(255, 255, 255, 0.07);
+            padding: 0.4rem 1rem;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        /* App Main Content Area */
+        main {
+            margin-top: 70px;
+            min-height: calc(100vh - 70px);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 2rem;
+        }
+
+        .view-container {
+            display: none;
+            width: 100%;
+            max-width: 1200px;
+        }
+
+        .view-container.active {
+            display: block;
+        }
+
+        /* Form Controls & General UI Components */
+        .card {
+            background: rgba(30, 30, 36, 0.75);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 16px;
+            padding: 2.5rem;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.4);
+        }
+
+        .form-group {
+            margin-bottom: 1.25rem;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
+        input[type="text"], input[type="password"], select {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 8px;
+            color: white;
+            font-size: 1rem;
+            transition: border-color 0.2s;
+        }
+
+        input[type="text"]:focus, input[type="password"]:focus, select:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        .btn {
+            width: 100%;
+            padding: 0.85rem;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            justify-content: center;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-hover);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .btn-danger {
+            background: #ef4444;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #dc2626;
+        }
+
+        /* View Specific Designs */
+        /* Login Page View */
+        #login-view {
+            max-width: 450px;
+            width: 100%;
+        }
+
+        .chess-bg-wrapper {
+            background-color: #15171e;
+            background-image: var(--gradient-chess);
+            background-size: 60px 60px;
+            background-position: 0 0, 0 30px, 30px -30px, -30px 0px;
+            padding: 2rem;
+            border-radius: 20px;
+            box-shadow: inset 0 0 100px rgba(0,0,0,0.8);
+        }
+
+        .google-btn {
+            background: white;
+            color: #1f2937;
+            margin-bottom: 1.5rem;
+        }
+
+        .google-btn:hover {
+            background: #f3f4f6;
+        }
+
+        .divider {
+            display: flex;
+            align-items: center;
+            text-align: center;
+            color: var(--text-muted);
+            margin: 1.5rem 0;
+            font-size: 0.85rem;
+        }
+
+        .divider::before, .divider::after {
+            content: '';
+            flex: 1;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .divider:not(:empty)::before { margin-right: .5em; }
+        .divider:not(:empty)::after { margin-left: .5em; }
+
+        .clickable-link {
+            color: var(--primary);
+            text-align: center;
+            margin-top: 1.5rem;
+            cursor: pointer;
+            font-size: 0.95rem;
+            text-decoration: underline;
+        }
+
+        /* Level Selector Popup Modal */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(8px);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background: var(--bg-card);
+            border: 1px solid rgba(255,255,255,0.15);
+            border-radius: 16px;
+            padding: 2.5rem;
+            max-width: 500px;
+            width: 90%;
+            animation: popUp 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .level-option {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            padding: 1rem;
+            margin-bottom: 0.75rem;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .level-option:hover {
+            background: rgba(129, 140, 248, 0.15);
+            border-color: var(--primary);
+            transform: translateX(4px);
+        }
+
+        /* Chess Engine Interactive Interface */
+        .chess-container {
+            display: grid;
+            grid-template-columns: 1fr 350px;
+            gap: 2rem;
+            align-items: start;
+        }
+
+        @media (max-width: 900px) {
+            .chess-container { grid-template-columns: 1fr; }
+        }
+
+        .chessboard-wrapper {
+            background: #262522;
+            padding: 1rem;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+
+        .chessboard {
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+            grid-template-rows: repeat(8, 1fr);
+            aspect-ratio: 1;
+            width: 100%;
+            max-width: 600px;
+            margin: 0 auto;
+            border: 4px solid #312e2b;
+        }
+
+        .square {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: clamp(1.5rem, 4vw, 3rem);
+            position: relative;
+        }
+
+        .light-sq { background-color: var(--board-light); color: #769656;}
+        .dark-sq { background-color: var(--board-dark); color: var(--board-light); }
+
+        .game-panel {
+            background: rgba(0,0,0,0.2);
+            border-radius: 12px;
+            padding: 1.5rem;
+            border: 1px solid rgba(255,255,255,0.05);
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        /* Openings Page Layout */
+        .openings-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin-top: 1.5rem;
+        }
+
+        .opening-card {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 12px;
+            padding: 1.5rem;
+            transition: transform 0.2s, border-color 0.2s;
+        }
+
+        .opening-card:hover {
+            transform: translateY(-4px);
+            border-color: var(--primary);
+        }
+
+        /* Admin & Post Logs Dashboard */
+        .admin-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 2rem;
+        }
+
+        .log-entry, .blog-entry {
+            background: rgba(255,255,255,0.03);
+            border-left: 4px solid var(--primary);
+            padding: 1.5rem;
+            border-radius: 0 12px 12px 0;
+            margin-bottom: 1.5rem;
+            position: relative;
+        }
+
+        .admin-controls {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+
+        .code-box {
+            background: #000;
+            color: #00ff00;
+            font-family: 'Courier New', Courier, monospace;
+            padding: 1rem;
+            border-radius: 8px;
+            max-height: 300px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            font-size: 0.85rem;
+            user-select: text;
+        }
+
+        .captcha-box {
+            background: linear-gradient(45deg, #374151, #1f2937);
+            color: #f59e0b;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 1.5rem;
+            font-weight: bold;
+            letter-spacing: 5px;
+            text-align: center;
+            padding: 0.5rem;
+            border-radius: 6px;
+            margin: 1rem 0;
+            text-shadow: 2px 2px #000;
+        }
+
+        .admin-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+
+        .admin-table th, .admin-table td {
+            padding: 0.75rem;
+            text-align: left;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .admin-table th { background: rgba(0,0,0,0.3); }
+
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body>
+
+    <header id="app-header" class="hidden">
+        <div class="brand-logo" onclick="app.router('home')">ChessTacs</div>
+        <nav>
+            <ul>
+                <li class="nav-item">Play
+                    <div class="dropdown-menu">
+                        <div class="dropdown-item" onclick="app.router('play-global')">Play Global</div>
+                        <div class="dropdown-item" onclick="app.setupComputerMatchSelection()">Play with computer</div>
+                    </div>
+                </li>
+                <li class="nav-item">Learn
+                    <div class="dropdown-menu">
+                        <div class="dropdown-item" onclick="app.router('learn-openings')">Learn Openings</div>
+                    </div>
+                </li>
+                <li class="nav-item">Updates
+                    <div class="dropdown-menu">
+                        <div class="dropdown-item" onclick="app.router('update-logs')">Update logs</div>
+                        <div class="dropdown-item" onclick="app.router('whats-new')">Whats new</div>
+                    </div>
+                </li>
+                <li class="nav-item">Settings
+                    <div class="dropdown-menu">
+                        <div class="dropdown-item" onclick="app.router('setting-name')">Change name</div>
+                        <div class="dropdown-item" onclick="app.router('setting-password')">Change password</div>
+                        <div class="dropdown-item" onclick="app.triggerEloTest()">Elo test</div>
+                        <div class="dropdown-item" onclick="app.router('setting-deactivate')">Deactivate account</div>
+                    </div>
+                </li>
+                <li class="nav-item var-admin-btn hidden" onclick="app.router('admin-dashboard')" style="color: var(--accent); font-weight: bold;">Admin Panel</li>
+            </ul>
+        </nav>
+        <div class="user-badge">
+            <span id="nav-username">User</span>
+            <span id="nav-elo" style="color: var(--accent); font-weight: bold;">1000 Elo</span>
+            <button onclick="app.logout()" class="btn btn-secondary" style="padding: 0.25rem 0.5rem; font-size: 0.8rem; margin-left: 0.5rem;">Logout</button>
+        </div>
+    </header>
+
+    <main>
+        
+        <div id="login-view" class="view-container active animated-view">
+            <div class="chess-bg-wrapper">
+                <div class="card">
+                    <h2 style="text-align: center; margin-bottom: 1.5rem;" id="login-card-title">Join ChessTacs</h2>
+                    <button class="btn google-btn" onclick="alert('Google Authentication Simulation Active!')">
+                        Continue with Google
+                    </button>
+                    <div class="divider">or</div>
+                    <form id="auth-form" onsubmit="app.handleAuth(event)">
+                        <div class="form-group">
+                            <label>Username</label>
+                            <input type="text" id="auth-user" required autocomplete="username">
+                        </div>
+                        <div class="form-group">
+                            <label>Password</label>
+                            <input type="password" id="auth-pass" required autocomplete="current-password">
+                        </div>
+                        <button type="submit" class="btn btn-primary" id="auth-submit-btn">Login</button>
+                    </form>
+                    <div class="clickable-link" id="auth-toggle-link" onclick="app.toggleAuthMode()">New to chessTacs? Create new account</div>
+                </div>
+            </div>
+        </div>
+
+        <div id="home-view" class="view-container animated-view">
+            <div class="card" style="text-align: center; max-width: 700px; margin: 0 auto;">
+                <h1 style="font-size: 2.5rem; margin-bottom: 1rem;">Welcome to ChessTacs!</h1>
+                <p style="color: var(--text-muted); margin-bottom: 2rem; line-height: 1.6;">Improve your chess tactics, test your strategic performance, play global live matchups or face advanced calibrated computing bots instantly.</p>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                    <button class="btn btn-primary" onclick="app.setupComputerMatchSelection()">Play Computer</button>
+                    <button class="btn btn-secondary" onclick="app.router('learn-openings')">Study Openings</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="play-view" class="view-container animated-view">
+            <h2 id="match-title" style="margin-bottom: 1.5rem;">Playing vs Bot Engine</h2>
+            <div class="chess-container">
+                <div class="chessboard-wrapper">
+                    <div class="chessboard" id="board-grid"></div>
+                </div>
+                <div class="game-panel">
+                    <h3>Match Controls</h3>
+                    <div style="background: rgba(0,0,0,0.4); padding: 1rem; border-radius: 8px; font-size: 0.95rem;">
+                        <div>Opponent Rating: <span id="opponent-display-elo">800</span> Elo</div>
+                        <div>Current Move Counter: <span id="game-move-counter" style="font-weight: bold; color: var(--accent);">0</span></div>
+                    </div>
+                    <p style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.4;">Simulate match outcomes instantly below to evaluate rating assignment thresholds (<50 moves vs >50 moves mechanics).</p>
+                    <button class="btn btn-primary" onclick="app.simulateGameOutcome(true, 42)">Simulate Win (&lt; 50 moves)</button>
+                    <button class="btn btn-primary" style="background:#4338ca;" onclick="app.simulateGameOutcome(true, 55)">Simulate Win (&gt; 50 moves)</button>
+                    <button class="btn btn-danger" onclick="app.simulateGameOutcome(false, 30)">Simulate Loss (&lt; 50 moves)</button>
+                    <button class="btn btn-danger" style="background:#b91c1c;" onclick="app.simulateGameOutcome(false, 62)">Simulate Loss (&gt; 50 moves)</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="bot-selection-view" class="view-container animated-view">
+            <div class="card" style="max-width: 500px; margin: 0 auto;">
+                <h3 style="margin-bottom: 1.25rem;">Select Computer Engine Elo Strength</h3>
+                <div class="form-group">
+                    <label>Target Engine Rating</label>
+                    <select id="bot-selected-elo">
+                        <option value="400">400 Elo - Apprentice Engine</option>
+                        <option value="800">800 Elo - Standard Bot</option>
+                        <option value="1200">1200 Elo - Advanced Tactical Engine</option>
+                        <option value="1600">1600 Elo - Master System</option>
+                        <option value="2000">2000 Elo - Grandmaster Simulation</option>
+                    </select>
+                </div>
+                <button class="btn btn-primary" onclick="app.startCalibratedComputerMatch()">Launch Game Match</button>
+            </div>
+        </div>
+
+        <div id="learn-openings-view" class="view-container animated-view">
+            <h2>Master Core Chess Openings</h2>
+            <p style="color: var(--text-muted)">Click variations to examine optimal tactical movement theory.</p>
+            <div class="openings-grid" id="openings-container"></div>
+        </div>
+
+        <div id="update-logs-view" class="view-container animated-view">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem;">
+                <h2>System Core Update Logs</h2>
+                <button class="btn btn-primary var-admin-btn hidden" style="width:auto;" onclick="app.openLogModal()">Create New Log Entry</button>
+            </div>
+            <div id="logs-render-target"></div>
+        </div>
+
+        <div id="whats-new-view" class="view-container animated-view">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem;">
+                <h2>What's New Developer Blog</h2>
+                <button class="btn btn-primary var-admin-btn hidden" style="width:auto;" onclick="app.openBlogModal()">Publish New Article</button>
+            </div>
+            <div id="blogs-render-target"></div>
+        </div>
+
+        <div id="setting-name-view" class="view-container animated-view">
+            <div class="card" style="max-width: 450px; margin: 0 auto;">
+                <h3>Change Display Name</h3>
+                <form onsubmit="app.updateProfileName(event)" style="margin-top:1.25rem;">
+                    <div class="form-group">
+                        <label>New Account Handle</label>
+                        <input type="text" id="new-profile-name" required>
+                    </div>
+                    <button class="btn btn-primary" type="submit">Update Identity Handle</button>
+                </form>
+            </div>
+        </div>
+
+        <div id="setting-password-view" class="view-container animated-view">
+            <div class="card" style="max-width: 450px; margin: 0 auto;">
+                <h3>Change Password Credentials</h3>
+                <form onsubmit="app.updateProfilePassword(event)" style="margin-top:1.25rem;">
+                    <div class="form-group">
+                        <label>New Secret Password</label>
+                        <input type="password" id="new-profile-pass" required>
+                    </div>
+                    <button class="btn btn-primary" type="submit">Secure Account Access</button>
+                </form>
+            </div>
+        </div>
+
+        <div id="setting-deactivate-view" class="view-container animated-view">
+            <div class="card" style="max-width: 450px; margin: 0 auto;">
+                <h3 style="color:#ef4444;">Danger: Account Deactivation Zone</h3>
+                <p style="color: var(--text-muted); font-size: 0.9rem; margin-top:0.5rem;">Verify your secure login parameters and parse human challenge tests to purge this data container permanently.</p>
+                <form onsubmit="app.processAccountDeactivation(event)" style="margin-top:1.25rem;">
+                    <div class="form-group">
+                        <label>Confirm Account Username</label>
+                        <input type="text" id="deactivate-user" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Confirm Account Password</label>
+                        <input type="password" id="deactivate-pass" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Human Captcha Challenge Verification</label>
+                        <div class="captcha-box" id="captcha-display-target">XXXXXX</div>
+                        <input type="text" id="deactivate-captcha-input" placeholder="Type captcha code perfectly" required>
+                    </div>
+                    <button class="btn btn-danger" type="submit">Purge Data Permanently</button>
+                </form>
+            </div>
+        </div>
+
+        <div id="admin-dashboard-view" class="view-container animated-view">
+            <h2>Admin Master Dashboard</h2>
+            <div class="admin-grid" style="margin-top:1.5rem;">
+                <div class="card">
+                    <h3>All Registered User Accounts Storage</h3>
+                    <div style="overflow-x:auto;">
+                        <table class="admin-table">
+                            <thead>
+                                <tr>
+                                    <th>Username Storage Node</th>
+                                    <th>Active Password Hash</th>
+                                    <th>Elo Scale</th>
+                                    <th>Operations</th>
+                                </tr>
+                            </thead>
+                            <tbody id="admin-users-table-body"></tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="card">
+                    <h3>Live Production System Code Core</h3>
+                    <p style="font-size:0.85rem; margin-bottom:0.75rem; color:var(--text-muted);">Encapsulated system runtime code deployed successfully.</p>
+                    <div class="code-box" id="admin-code-inspector"></div>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <div class="modal-overlay" id="onboarding-modal">
+        <div class="modal-content">
+            <h3 style="margin-bottom: 0.5rem;">Welcome <span id="onboarding-user-title" style="color: var(--primary);">User</span> to ChessTacs!</h3>
+            <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1.5rem;">Please select your level to calibrate initial matchmaking configurations:</p>
+            
+            <div class="level-option" onclick="app.assignOnboardingLevel(100, 299)">
+                <span>100-299 New to Chess</span> ➔
+            </div>
+            <div class="level-option" onclick="app.assignOnboardingLevel(300, 599)">
+                <span>300-599 Beginner</span> ➔
+            </div>
+            <div class="level-option" onclick="app.assignOnboardingLevel(600, 999)">
+                <span>600-999 Intermediate</span> ➔
+            </div>
+            <div class="level-option" onclick="app.assignOnboardingLevel(1000, 1599)">
+                <span>1000-1599 Advanced</span> ➔
+            </div>
+            <div class="level-option" onclick="app.assignOnboardingLevel(1600, 2000)">
+                <span>1600-2000 Master</span> ➔
+            </div>
+            <div class="level-option" onclick="app.assignOnboardingLevel(null, null, true)" style="border-color: var(--accent);">
+                <span style="color: var(--accent); font-weight: bold;">? Don't Know</span> ➔
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="admin-editor-modal">
+        <div class="modal-content">
+            <h3 id="editor-modal-title">Write System Entry</h3>
+            <form id="editor-form" onsubmit="app.saveAdminEntry(event)" style="margin-top: 1.25rem;">
+                <input type="hidden" id="editor-target-type">
+                <input type="hidden" id="editor-edit-id">
+                <div class="form-group">
+                    <label>Headline Title</label>
+                    <input type="text" id="editor-title" required>
+                </div>
+                <div class="form-group">
+                    <label>Main Text Content Body</label>
+                    <textarea id="editor-body" style="width:100%; height:120px; background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.15); border-radius:8px; color:white; padding:0.5rem;" required></textarea>
+                </div>
+                <div style="display:flex; gap:0.5rem; margin-top:1rem;">
+                    <button type="submit" class="btn btn-primary">Publish Entry</button>
+                    <button type="button" class="btn btn-secondary" onclick="document.getElementById('admin-editor-modal').style.display='none'">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        class ChessTacsEngine {
+            constructor() {
+                // Seed initial dataset variables
+                this.db = JSON.parse(localStorage.getItem('chesstacs_db')) || {
+                    users: {
+                        "chesstacsadmin": { password: "chesstacsthebestadmin", elo: 2500, isAdmin: true }
+                    },
+                    logs: [
+                        { id: 1, title: "Production Engine Initialization v1.0", body: "Core framework nodes deployed with full compatibility parameters for repository tracking systems." }
+                    ],
+                    blogs: [
+                        { id: 1, title: "Welcome Open Source Developers", body: "Welcome to ChessTacs! Admin system access portals allow managing logs, updating internal blog parameters, and verifying algorithmic Elo structures efficiently." }
+                    ]
+                };
+                this.currentUser = null;
+                this.isRegisterMode = false;
+                this.activeMatchMode = null; // 'placement', 'computer', 'global'
+                this.activeBotRating = 800;
+                this.generatedCaptcha = "";
+
+                // Comprehensive List of Chess Openings 
+                this.openingsDataset = [
+                    { name: "Ruy Lopez (Spanish Opening)", moves: "1. e4 e5 2. Nf3 Nc6 3. Bb5", desc: "One of the oldest and most popular classical openings targeting the defender knight to apply early pressure on the center e5 infrastructure." },
+                    { name: "Sicilian Defense", moves: "1. e4 c5", desc: "The most statistically combative counter-attacking layout against King Pawn openings. Black fights directly for the d4 strategic zone asymmetry." },
+                    { name: "Queen's Gambit", moves: "1. d4 d5 2. c4", desc: "White temporarily offers a flank pawn to achieve secure geometric board domain dominance along central files." },
+                    { name: "French Defense", moves: "1. e4 e6 2. d4 d5", desc: "Solid counter strategy establishing an integrated structural pawn chain base to repel immediate white flank threats." },
+                    { name: "Caro-Kann Defense", moves: "1. e4 c6 2. d4 d5", desc: "Extremely resilient tactical structure resembling the French Defense but retaining unblocked operational avenues for the light-squared Bishop." },
+                    { name: "King's Indian Defense", moves: "1. d4 Nf6 2. c4 g6 3. Nc3 Bg7", desc: "A hypermodern response. Black invites white to build an expanded center matrix to strike it down with well-timed flank assaults." },
+                    { name: "Scandinavian Defense", moves: "1. e4 d5", desc: "Directly forces rapid tactical board openings, compelling early structural shifts on move one." },
+                    { name: "Italian Game", moves: "1. e4 e5 2. Nf3 Nc6 3. Bc4", desc: "Developed targeting rapid f7 pawn weakpoint alignment, paving lines for sharp traditional complex gambits." }
+                ];
+            }
+
+            init() {
+                this.saveStorage();
+                this.renderCodeInspectionBox();
+                this.renderVisualBoardSquares();
+                this.renderOpeningsTheoryCards();
+            }
+
+            saveStorage() {
+                localStorage.setItem('chesstacs_db', JSON.stringify(this.db));
+            }
+
+            toggleAuthMode() {
+                this.isRegisterMode = !this.isRegisterMode;
+                const title = document.getElementById('login-card-title');
+                const btn = document.getElementById('auth-submit-btn');
+                const link = document.getElementById('auth-toggle-link');
+                
+                if(this.isRegisterMode) {
+                    title.textContent = "Create Account Node";
+                    btn.textContent = "Register & Connect";
+                    link.textContent = "Already have a ChessTacs account? Login here";
+                } else {
+                    title.textContent = "Join ChessTacs";
+                    btn.textContent = "Login";
+                    link.textContent = "New to chessTacs? Create new account";
+                }
+            }
+
+            handleAuth(e) {
+                e.preventDefault();
+                const userRaw = document.getElementById('auth-user').value;
+                const pass = document.getElementById('auth-pass').value;
+                const userKey = userRaw.toLowerCase();
+
+                if(this.isRegisterMode) {
+                    if(this.db.users[userKey]) {
+                        alert("Account node collision error. That username registration key exists.");
+                        return;
+                    }
+                    // Complete registration assignment
+                    this.db.users[userKey] = {
+                        password: pass,
+                        elo: 1000,
+                        displayName: userRaw, // Keeps original casing for visualization
+                        isAdmin: false,
+                        registeredOn: Date.now(),
+                        lastEloTestTime: 0
+                    };
+                    this.saveStorage();
+                    this.currentUser = userKey;
+                    
+                    // Show level choice popup overlay
+                    document.getElementById('onboarding-user-title').textContent = userRaw;
+                    document.getElementById('onboarding-modal').style.display = 'flex';
+                } else {
+                    // Login verification logic pass
+                    if(!this.db.users[userKey] || this.db.users[userKey].password !== pass) {
+                        alert("Authentication Failure: Check input username or password verification strings.");
+                        return;
+                    }
+                    this.currentUser = userKey;
+                    this.completeUserSessionLaunch();
+                }
+            }
+
+            assignOnboardingLevel(min, max, bypass = false) {
+                document.getElementById('onboarding-modal').style.display = 'none';
+                if(bypass) {
+                    this.currentUserSessionLaunch();
+                    // Queue 'Don't Know' placement challenge
+                    alert("Initialization parameter unknown. Deploying evaluation test vs 800 Elo system bot engine.");
+                    this.launchMatchmakingSequence('placement', 800);
+                } else {
+                    // Assign median Elo from structured ranges
+                    const initialRating = Math.floor((min + max) / 2);
+                    this.db.users[this.currentUser].elo = initialRating;
+                    this.saveStorage();
+                    this.completeUserSessionLaunch();
+                }
+            }
+
+            completeUserSessionLaunch() {
+                const userNode = this.db.users[this.currentUser];
+                document.getElementById('nav-username').textContent = userNode.displayName || this.currentUser;
+                document.getElementById('nav-elo').textContent = `${userNode.elo} Elo`;
+                
+                // Toggle admin display status parameters
+                const adminElements = document.querySelectorAll('.var-admin-btn');
+                adminElements.forEach(el => {
+                    if(userNode.isAdmin) el.classList.remove('hidden');
+                    else el.classList.add('hidden');
+                });
+
+                document.getElementById('login-view').classList.remove('active');
+                document.getElementById('app-header').classList.remove('hidden');
+                this.router('home');
+                this.renderAdminUserManagementTable();
+            }
+
+            logout() {
+                this.currentUser = null;
+                document.getElementById('app-header').classList.add('hidden');
+                document.getElementById('auth-form').reset();
+                if(this.isRegisterMode) this.toggleAuthMode();
+                
+                // Hide all views, return to login
+                const views = document.querySelectorAll('.view-container');
+                views.forEach(v => v.classList.remove('active'));
+                document.getElementById('login-view').classList.add('active');
+            }
+
+            router(targetView) {
+                // Global Interception Guard for Play Global matching request
+                if(targetView === 'play-global') {
+                    alert("There are no current active players");
+                    this.router('home');
+                    return;
+                }
+
+                const views = document.querySelectorAll('.view-container');
+                views.forEach(v => v.classList.remove('active'));
+                
+                const activeView = document.getElementById(`${targetView}-view`);
+                if(activeView) activeView.classList.add('active');
+
+                // Auxiliary functional routines during route initialization updates
+                if(targetView === 'update-logs') this.renderSystemContentEntries('logs', 'logs-render-target');
+                if(targetView === 'whats-new') this.renderSystemContentEntries('blogs', 'blogs-render-target');
+                if(targetView === 'setting-deactivate') this.generateCaptchaChallenge();
+            }
+
+            // Chess Board Visual Component
+            renderVisualBoardSquares() {
+                const board = document.getElementById('board-grid');
+                board.innerHTML = '';
+                const piecesMap = [
+                    ['♜','♞','♝','♛','♚','♝','♞','♜'],
+                    ['♟','♟','♟','♟','♟','♟','♟','♟'],
+                    ['','','','','','','',''],
+                    ['','','','','','','',''],
+                    ['','','','','','','',''],
+                    ['','','','','','','',''],
+                    ['♙','♙','♙','♙','♙','♙','♙','♙'],
+                    ['♖','♘','♗','♕','♔','♗','♘','♖']
+                ];
+
+                for (let row = 0; row < 8; row++) {
+                    for (let col = 0; col < 8; col++) {
+                        const sq = document.createElement('div');
+                        sq.className = `square ${(row + col) % 2 === 0 ? 'light-sq' : 'dark-sq'}`;
+                        sq.textContent = piecesMap[row][col];
+                        sq.style.animation = `boardSlide ${3 + (row*0.1)}s ease-in-out infinite alternate`;
+                        board.appendChild(sq);
+                    }
+                }
+            }
+
+            // Engine Match Handling Utilities
+            launchMatchmakingSequence(mode, opponentElo) {
+                this.activeMatchMode = mode;
+                this.activeBotRating = opponentElo;
+                document.getElementById('opponent-display-elo').textContent = opponentElo;
+                document.getElementById('game-move-counter').textContent = "0";
+                document.getElementById('match-title').textContent = `Match Environment Mode: ${mode.toUpperCase()} Engine vs CoreBot`;
+                this.router('play');
+            }
+
+            setupComputerMatchSelection() {
+                this.router('bot-selection');
+            }
+
+            startCalibratedComputerMatch() {
+                const selectedElo = parseInt(document.getElementById('bot-selected-elo').value);
+                this.launchMatchmakingSequence('computer', selectedElo);
+            }
+
+            simulateGameOutcome(userWon, totalMoves) {
+                document.getElementById('game-move-counter').textContent = totalMoves;
+                const playerNode = this.db.users[this.currentUser];
+                let resolvedRatingAdjustment = 0;
+
+                if(this.activeMatchMode === 'placement') {
+                    // Specific algorithmic requirements check logic map
+                    if(userWon && totalMoves < 50) resolvedRatingAdjustment = Math.floor(Math.random() * (600 - 400 + 1)) + 400;
+                    else if(!userWon && totalMoves < 50) resolvedRatingAdjustment = Math.floor(Math.random() * (300 - 200 + 1)) + 200;
+                    else if(userWon && totalMoves >= 50) resolvedRatingAdjustment = Math.floor(Math.random() * (600 - 500 + 1)) + 500;
+                    else if(!userWon && totalMoves >= 50) resolvedRatingAdjustment = Math.floor(Math.random() * (700 - 400 + 1)) + 400;
+                    
+                    playerNode.elo = resolvedRatingAdjustment;
+                    alert(`Placement Complete! Matched profile base performance metrics. Rated initial position calibration: ${resolvedRatingAdjustment} Elo.`);
+                } else {
+                    // Standard Match System Logic Engine (Dynamic Adjustments mapping)
+                    const eloDifferenceGap = this.activeBotRating - playerNode.elo;
+                    
+                    if(userWon) {
+                        if(eloDifferenceGap > 200) {
+                            // High difference engine win boost logic rules
+                            resolvedRatingAdjustment = Math.floor(Math.random() * (42 - 10 + 1)) + 10;
+                        } else {
+                            resolvedRatingAdjustment = 15;
+                        }
+                        playerNode.elo += resolvedRatingAdjustment;
+                        alert(`Victory! Dynamic performance matrix analysis recorded score metrics. Added (+${resolvedRatingAdjustment}) score units.`);
+                    } else {
+                        if(eloDifferenceGap < -200) {
+                            // Large deficit engine penalty structural boundary reduction
+                            resolvedRatingAdjustment = Math.floor(Math.random() * (18 - 12 + 1)) + 12;
+                        } else {
+                            resolvedRatingAdjustment = 12;
+                        }
+                        playerNode.elo = Math.max(100, playerNode.elo - resolvedRatingAdjustment);
+                        alert(`Defeat. Evaluated tactical matrix accuracy downshift. Deducted (-${resolvedRatingAdjustment}) score units.`);
+                    }
+
+                    // Process specific structural condition adjustments for specialized Elo Test updates
+                    if(this.activeMatchMode === 'elotest') {
+                        playerNode.lastEloTestTime = Date.now();
+                    }
+                }
+
+                this.saveStorage();
+                this.completeUserSessionLaunch();
+            }
+
+            triggerEloTest() {
+                const playerNode = this.db.users[this.currentUser];
+                const coolDownSpan = 14 * 24 * 60 * 60 * 1000; // 2 Weeks timestamp
+                const residualDelta = Date.now() - (playerNode.lastEloTestTime || 0);
+
+                if(residualDelta < coolDownSpan) {
+                    const trackingDaysRemaining = Math.ceil((coolDownSpan - residualDelta) / (1000 * 60 * 60 * 24));
+                    alert(`Evaluation cooldown active. Access to explicit test pipelines unlocks again in ${trackingDaysRemaining} days.`);
+                    return;
+                }
+
+                alert("Bi-weekly performance test mode loaded. Match parameters configured vs high complexity calibration engine.");
+                this.launchMatchmakingSequence('elotest', playerNode.elo + 150);
+            }
+
+            // Rendering System Dynamic Modules
+            renderOpeningsTheoryCards() {
+                const container = document.getElementById('openings-container');
+                container.innerHTML = '';
+                this.openingsDataset.forEach(op => {
+                    const card = document.createElement('div');
+                    card.className = 'opening-card';
+                    card.innerHTML = `
+                        <h4 style="color: var(--primary); margin-bottom:0.4rem;">${op.name}</h4>
+                        <code style="background:#000; padding:0.2rem 0.5rem; display:inline-block; border-radius:4px; font-size:0.85rem; color:var(--accent); margin-bottom:0.75rem;">${op.moves}</code>
+                        <p style="font-size:0.85rem; line-height:1.4; color:var(--text-muted);">${op.desc}</p>
+                    `;
+                    container.appendChild(card);
+                });
+            }
+
+            renderSystemContentEntries(type, targetDomId) {
+                const container = document.getElementById(targetDomId);
+                container.innerHTML = '';
+                const dataset = this.db[type];
+                const activeUserData = this.db.users[this.currentUser];
+
+                if(dataset.length === 0) {
+                    container.innerHTML = `<p style="color:var(--text-muted);">No entries recorded inside this stream folder node.</p>`;
+                    return;
+                }
+
+                dataset.forEach(entry => {
+                    const item = document.createElement('div');
+                    item.className = type === 'logs' ? 'log-entry' : 'blog-entry';
+                    item.innerHTML = `
+                        <h4 style="margin-bottom:0.5rem; font-size:1.15rem;">${entry.title}</h4>
+                        <p style="font-size:0.95rem; color:var(--text-muted); line-height:1.5;">${entry.body}</p>
+                        ${activeUserData.isAdmin ? `
+                            <div class="admin-controls">
+                                <button class="btn btn-secondary" style="padding:0.35rem 0.75rem; font-size:0.8rem; width:auto;" onclick="app.openEditEditorModal('${type}', ${entry.id})">Edit</button>
+                                <button class="btn btn-danger" style="padding:0.35rem 0.75rem; font-size:0.8rem; width:auto;" onclick="app.deleteAdminEntry('${type}', ${entry.id})">Delete</button>
+                            </div>
+                        ` : ''}
+                    `;
+                    container.appendChild(item);
+                });
+            }
+
+            // Admin Actions Workflow
+            openLogModal() { this.showEditorForm('logs'); }
+            openBlogModal() { this.showEditorForm('blogs'); }
+
+            showEditorForm(type, editId = null) {
+                const modal = document.getElementById('admin-editor-modal');
+                document.getElementById('editor-target-type').value = type;
+                document.getElementById('editor-edit-id').value = editId || '';
+                
+                if(editId) {
+                    const entry = this.db[type].find(e => e.id === editId);
+                    document.getElementById('editor-title').value = entry.title;
+                    document.getElementById('editor-body').value = entry.body;
+                    document.getElementById('editor-modal-title').textContent = "Modify Operational Log Entry";
+                } else {
+                    document.getElementById('editor-form').reset();
+                    document.getElementById('editor-modal-title').textContent = "Publish Production Log Block";
+                }
+                modal.style.display = 'flex';
+            }
+
+            openEditEditorModal(type, id) { this.showEditorForm(type, id); }
+
+            saveAdminEntry(e) {
+                e.preventDefault();
+                const type = document.getElementById('editor-target-type').value;
+                const editIdRaw = document.getElementById('editor-edit-id').value;
+                const title = document.getElementById('editor-title').value;
+                const body = document.getElementById('editor-body').value;
+
+                if(editIdRaw) {
+                    const item = this.db[type].find(e => e.id === parseInt(editIdRaw));
+                    if(item) { item.title = title; item.body = body; }
+                } else {
+                    const nextId = this.db[type].length > 0 ? Math.max(...this.db[type].map(e=>e.id)) + 1 : 1;
+                    this.db[type].push({ id: nextId, title, body });
+                }
+
+                this.saveStorage();
+                document.getElementById('admin-editor-modal').style.display = 'none';
+                this.renderSystemContentEntries(type, type === 'logs' ? 'logs-render-target' : 'blogs-render-target');
+            }
+
+            deleteAdminEntry(type, id) {
+                if(!confirm("Purge selected storage cell vector metadata records?")) return;
+                this.db[type] = this.db[type].filter(e => e.id !== id);
+                this.saveStorage();
+                this.renderSystemContentEntries(type, type === 'logs' ? 'logs-render-target' : 'blogs-render-target');
+            }
+
+            // Profile Settings Configuration Engine
+            updateProfileName(e) {
+                e.preventDefault();
+                const updatedHandle = document.getElementById('new-profile-name').value;
+                this.db.users[this.currentUser].displayName = updatedHandle;
+                this.saveStorage();
+                alert("Identity signature metadata configuration sequence complete.");
+                this.completeUserSessionLaunch();
+            }
+
+            updateProfilePassword(e) {
+                e.preventDefault();
+                const updatedPass = document.getElementById('new-profile-pass').value;
+                this.db.users[this.currentUser].password = updatedPass;
+                this.saveStorage();
+                alert("Access credential definitions altered securely.");
+                this.router('home');
+            }
+
+            generateCaptchaChallenge() {
+                const lexicon = "ABCDEFGHJKMNPQRSTWXYZ23456789";
+                let outputStr = "";
+                for(let i=0; i<6; i++) outputStr += lexicon.charAt(Math.floor(Math.random() * lexicon.length));
+                this.generatedCaptcha = outputStr;
+                document.getElementById('captcha-display-target').textContent = outputStr;
+                document.getElementById('deactivate-captcha-input').value = "";
+            }
+
+            processAccountDeactivation(e) {
+                e.preventDefault();
+                const usr = document.getElementById('deactivate-user').value.toLowerCase();
+                const pass = document.getElementById('deactivate-pass').value;
+                const captchaInput = document.getElementById('deactivate-captcha-input').value;
+
+                if(usr !== this.currentUser || this.db.users[usr].password !== pass) {
+                    alert("Verification mismatch. Credentials do not match current session identity rules.");
+                    this.generateCaptchaChallenge();
+                    return;
+                }
+
+                if(captchaInput.toUpperCase() !== this.generatedCaptcha) {
+                    alert("Captcha validation failure. Request refused.");
+                    this.generateCaptchaChallenge();
+                    return;
+                }
+
+                if(this.db.users[usr].isAdmin) {
+                    alert("Security System Failure Protection: Primary system administration accounts cannot be purged directly from user-space views.");
+                    return;
+                }
+
+                if(confirm("Are you completely sure? This will purge your profile forever.")) {
+                    delete this.db.users[usr];
+                    this.saveStorage();
+                    alert("Account purged successfully.");
+                    this.logout();
+                }
+            }
+
+            // Administrative Backend Subsystems
+            renderAdminUserManagementTable() {
+                const tbody = document.getElementById('admin-users-table-body');
+                tbody.innerHTML = '';
+                
+                Object.keys(this.db.users).forEach(userKey => {
+                    const u = this.db.users[userKey];
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td style="font-weight:bold;">${u.displayName || userKey}</td>
+                        <td style="font-family:monospace; color:var(--accent);">${u.password}</td>
+                        <td>${u.elo}</td>
+                        <td>
+                            ${u.isAdmin ? `<span style="color:var(--text-muted)">System Admin Protected</span>` : `
+                                <button class="btn btn-danger" style="padding:0.25rem 0.5rem; font-size:0.8rem; width:auto;" onclick="app.purgeUserAccountByAdmin('${userKey}')">Delete Account</button>
+                            `}
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            }
+
+            purgeUserAccountByAdmin(userKey) {
+                if(confirm(`Execute full administrative deletion command string on node index: [${userKey}]?`)) {
+                    delete this.db.users[userKey];
+                    this.saveStorage();
+                    this.renderAdminUserManagementTable();
+                }
+            }
+
+            renderCodeInspectionBox() {
+                const sourceElement = document.documentElement.outerHTML;
+                document.getElementById('admin-code-inspector').textContent = sourceElement;
+            }
+        }
+
+        // Initialize runtime initialization vectors
+        const app = new ChessTacsEngine();
+        window.onload = () => app.init();
+    </script>
+</body>
+</html>
